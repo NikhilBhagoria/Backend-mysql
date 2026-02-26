@@ -48,69 +48,100 @@ const updateUser = (req, res) => {
 
 // Delete a user
 const deleteUser = (req, res) => {
+    try{
+    // const adminId = req.user.id;
     const { id } = req.params;
-    db.query("DELETE FROM users WHERE id = ?", [id], (err, result) => {
-        if (err) {
-            console.log(err);
-            res.status(500).send("Error deleting user");
-        } else {
-            res.json(result);
+    // if (adminId === id) {
+    //     return res.status(400).send("You cannot delete yourself");
+    // }
+    return res.status(501).send(
+        {
+            message: "Soft delete not implemented yet. This endpoint is a placeholder for future implementation.",
+            data:req.user
         }
-    });
+    );
+    // db.query(
+    //     `UPDATE users 
+    //      SET is_deleted = true,
+    //          deleted_at = CURRENT_TIMESTAMP,
+    //          deleted_by = ?
+    //      WHERE id = ?`,
+    //     [adminId, id],
+    //     (err, result) => {
+    //         if (err) {
+    //             console.log(err);
+    //             res.status(500).send("Error deleting user");
+    //         } else {
+    //             res.json(result);
+    //         }
+    //     });
+} catch (error) {
+    console.error("Error in deleteUser:", error);
+    res.status(500).send("Server error");
+}
 };
 
 // Login
 const loginUser = (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).send("Email and password are required");
-    }
-    // check if user exists
-    db.query("SELECT * FROM users WHERE email = ?", [email], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send("Server error");
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).send("Email and password are required");
         }
-
-        if (result.length === 0) {
-            return res.status(401).send("Invalid credentials");
-        }
-
-        const user = result[0];
-
-        bcrypt.compare(password, user.password, (err, isMatch) => {
+        // check if user exists
+        db.query("SELECT * FROM users WHERE email = ?", [email], (err, result) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send("Server error");
             }
 
-            if (!isMatch) {
-                return res.status(401).send("Invalid password");
+            if (result.length === 0) {
+                return res.status(401).send("Invalid credentials");
             }
 
-            const token = jwt.sign(
-                { id: user.id },
-                process.env.JWT_SECRET,
-                { expiresIn: "1h" }
-            );
-            // Refresh Token
-            const refreshToken = jwt.sign(
-                { id: user.id },
-                process.env.JWT_SECRET,
-                { expiresIn: "7d" }
-            );
+            const user = result[0];
 
-            res.json({
-                message: "Login successful",
-                user: {
-                    id: user.id,
-                    email: user.email
-                },
-                token,
-                refreshToken
+            bcrypt.compare(password, user.password, (err, isMatch) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("Server error");
+                }
+
+                if (!isMatch) {
+                    return res.status(401).send("Invalid password");
+                }
+
+                const token = jwt.sign(
+                    { 
+                        id: user.id , 
+                        role: user.role,
+                        status : user.status
+                    },
+                    process.env.JWT_SECRET,
+                    { expiresIn: "1h" }
+                );
+                // Refresh Token
+                const refreshToken = jwt.sign(
+                    { id: user.id },
+                    process.env.JWT_SECRET,
+                    { expiresIn: "7d" }
+                );
+
+                res.json({
+                    message: "Login successful",
+                    user: {
+                        id: user.id,
+                        email: user.email
+                    },
+                    token,
+                    refreshToken
+                });
             });
         });
-    });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Server error");
+    }
 };
 
 module.exports = {

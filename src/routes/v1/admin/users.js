@@ -8,6 +8,6 @@ const roleMiddleware = require("../../../middlewares/roleMiddleware");
 router.get("/", authMiddleware, roleMiddleware(["admin"]), getAllUsers);
 
 // Delete a user (Admin only)
-router.delete("/:id", authMiddleware, roleMiddleware(["admin"]), deleteUser);
+router.delete("/:id", authMiddleware, deleteUser);
 
 module.exports = router;
