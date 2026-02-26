@@ -44,3 +44,6 @@ next-env.d.ts
 # docker
 .dockerignore
 Dockerfile
+
+debug_connection.js
+debug_output.txt
